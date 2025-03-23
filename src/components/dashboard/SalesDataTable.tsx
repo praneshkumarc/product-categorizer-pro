@@ -2,7 +2,8 @@
 import React from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Import the sales data
 import salesData from "@/data/product_sales_data.json";
@@ -21,16 +22,24 @@ export const SalesDataTable = () => {
     {
       accessorKey: "productName",
       header: "Product",
+      sortable: true,
+    },
+    {
+      accessorKey: "sku",
+      header: "SKU",
+      sortable: true,
     },
     {
       accessorKey: "salesLocation",
       header: "Location",
+      sortable: true,
     },
     {
       accessorKey: "price",
       header: "Price",
       cell: ({ row }: { row: any }) => formatCurrency(row.price),
       className: "text-right",
+      sortable: true,
     },
     {
       accessorKey: "demand",
@@ -55,6 +64,7 @@ export const SalesDataTable = () => {
           </Badge>
         );
       },
+      sortable: true,
     },
     {
       accessorKey: "season",
@@ -64,15 +74,23 @@ export const SalesDataTable = () => {
           {row.season}
         </Badge>
       ),
+      sortable: true,
     },
     {
       accessorKey: "month",
       header: "Month",
+      sortable: true,
     },
     {
       accessorKey: "quantity",
       header: "Quantity",
       className: "text-right",
+      sortable: true,
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      sortable: true,
     },
     {
       accessorKey: "margin",
@@ -82,7 +100,9 @@ export const SalesDataTable = () => {
           <TrendingUp className="h-3 w-3 text-green-600 inline mr-1" />
         ) : row.trend === 'down' ? (
           <TrendingDown className="h-3 w-3 text-red-600 inline mr-1" />
-        ) : null;
+        ) : (
+          <Minus className="h-3 w-3 text-gray-400 inline mr-1" />
+        );
         
         return (
           <div className="text-right">
@@ -91,15 +111,62 @@ export const SalesDataTable = () => {
         );
       },
       className: "text-right",
+      sortable: true,
     },
   ];
 
+  // Calculate summary statistics
+  const totalProducts = salesData.length;
+  const totalQuantity = salesData.reduce((sum, item) => sum + item.quantity, 0);
+  const totalRevenue = salesData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const averagePrice = salesData.reduce((sum, item) => sum + item.price, 0) / totalProducts;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalProducts}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Quantity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalQuantity.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Average Price</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(averagePrice)}</div>
+          </CardContent>
+        </Card>
+      </div>
+      
       <h3 className="text-lg font-medium">Sales Data</h3>
       <DataTable 
         columns={columns}
         data={salesData}
+        searchable={true}
+        searchKeys={["productName", "salesLocation", "season", "month", "category"]}
       />
     </div>
   );
