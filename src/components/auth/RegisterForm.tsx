@@ -11,6 +11,8 @@ import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Create schema for registration form validation
 const registerSchema = z.object({
@@ -31,8 +33,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Initialize form with react-hook-form
   const form = useForm<RegisterFormValues>({
@@ -48,29 +52,43 @@ export function RegisterForm() {
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
+    setAuthError(null);
     
     try {
-      // Here we would normally connect to a backend/API
-      // Since we don't have a backend connected yet, we'll simulate success
-      console.log("Registration form submitted:", data);
+      // Split name into first and last name
+      const nameParts = data.name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      // For demonstration purposes only (remove in production)
-      setTimeout(() => {
+      const { error } = await signUp(data.email, data.password, {
+        first_name: firstName,
+        last_name: lastName
+      });
+      
+      if (error) {
+        console.error("Registration error:", error);
+        setAuthError(error.message || "Registration failed. Please try again.");
+        toast({
+          title: "Registration failed",
+          description: error.message || "An error occurred during registration. Please try again.",
+          variant: "destructive",
+        });
+      } else {
         toast({
           title: "Registration successful",
-          description: "Your account has been created. Please log in.",
+          description: "Please check your email to confirm your account.",
         });
         navigate("/login");
-        setIsLoading(false);
-      }, 1500);
-      
+      }
     } catch (error) {
       console.error("Registration error:", error);
+      setAuthError("An unexpected error occurred. Please try again.");
       toast({
         title: "Registration failed",
-        description: "An error occurred during registration. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -84,6 +102,11 @@ export function RegisterForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {authError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField

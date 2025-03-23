@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Search, Bell, Settings, LogIn } from "lucide-react";
+import { Search, Bell, Settings, LogIn, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Header = () => {
   const [scrolled, setScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // This would be replaced by actual auth state
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOut } = useAuth();
   
   // Check if we're on an auth page
   const isAuthPage = 
@@ -32,6 +33,16 @@ export const Header = () => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [scrolled]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
 
   return (
     <header 
@@ -58,7 +69,7 @@ export const Header = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          {isLoggedIn ? (
+          {user ? (
             <>
               <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 animate-hover hover:bg-secondary">
                 <Bell className="h-5 w-5 text-muted-foreground" />
@@ -68,14 +79,19 @@ export const Header = () => {
               </Button>
               <Separator orientation="vertical" className="h-8" />
               <Avatar className="h-10 w-10 animate-hover ring-offset-background transition-all hover:ring-2 hover:ring-primary hover:ring-offset-2">
-                <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" />
-                <AvatarFallback>PM</AvatarFallback>
+                <AvatarImage src="" />
+                <AvatarFallback>{getInitials(user.email || '')}</AvatarFallback>
               </Avatar>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </Button>
             </>
           ) : (
             !isAuthPage && (
               <div className="flex items-center space-x-2">
                 <Button variant="ghost" onClick={() => navigate("/login")}>
+                  <LogIn className="h-4 w-4 mr-2" />
                   Log in
                 </Button>
                 <Button onClick={() => navigate("/register")}>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -6,6 +5,7 @@ import { ProductCard, Product } from '@/components/product/ProductCard';
 import { CategoryForm, Category } from '@/components/category/CategoryForm';
 import { PricingRules, PricingRule } from '@/components/pricing/PricingRules';
 import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard';
+import { ProductForm } from '@/components/product/ProductForm';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog,
@@ -23,9 +23,12 @@ import {
 } from "@/components/ui/tabs";
 import { PlusCircle, Layers, LayoutGrid } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [categories, setCategories] = useState<Category[]>([
     {
@@ -60,77 +63,7 @@ const Index = () => {
     }
   ]);
   
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 'prod-1',
-      name: 'Premium Wireless Headphones',
-      sku: 'WH-PRO-001',
-      price: 299.99,
-      category: 'Premium Products',
-      demand: 'high',
-      seasonality: 'Holiday',
-      margin: 35.5,
-      trend: 'up',
-      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'prod-2',
-      name: 'Summer Beach Sandals',
-      sku: 'SBS-001',
-      price: 49.99,
-      category: 'Seasonal',
-      demand: 'medium',
-      seasonality: 'Summer',
-      margin: 22.8,
-      trend: 'up',
-      imageUrl: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'prod-3',
-      name: 'Smartphone Holder',
-      sku: 'SH-001',
-      price: 19.99,
-      category: 'High Demand',
-      demand: 'high',
-      margin: 45.2,
-      trend: 'stable',
-      imageUrl: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'prod-4',
-      name: 'Winter Thermal Jacket',
-      sku: 'WTJ-001',
-      price: 189.99,
-      category: 'Seasonal',
-      demand: 'medium',
-      seasonality: 'Winter',
-      margin: 28.7,
-      trend: 'down',
-      imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'prod-5',
-      name: 'Smart Watch Pro',
-      sku: 'SWP-001',
-      price: 349.99,
-      category: 'Premium Products',
-      demand: 'high',
-      margin: 38.2,
-      trend: 'up',
-      imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'prod-6',
-      name: 'Mini Portable Speaker',
-      sku: 'MPS-001',
-      price: 79.99,
-      category: 'High Demand',
-      demand: 'high',
-      margin: 32.5,
-      trend: 'up',
-      imageUrl: 'https://images.unsplash.com/photo-1564424224827-cd24b8915874?q=80&w=500&auto=format&fit=crop'
-    }
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
   
   const [pricingRules, setPricingRules] = useState<PricingRule[]>([
     {
@@ -166,11 +99,11 @@ const Index = () => {
   
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [categorizeProductDialogOpen, setCategorizeProductDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [categoryView, setCategoryView] = useState<'grid' | 'list'>('grid');
   
-  // Handle route changes
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
     if (hash && ['dashboard', 'products', 'categories', 'pricing', 'analytics'].includes(hash)) {
@@ -178,12 +111,178 @@ const Index = () => {
     }
   }, []);
   
-  // Update URL when tab changes
   useEffect(() => {
     window.location.hash = activeTab;
   }, [activeTab]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Error fetching products:', error);
+          toast({
+            title: 'Error',
+            description: 'Could not load products',
+            variant: 'destructive',
+          });
+        } else if (data) {
+          setProducts(data);
+        }
+      } else {
+        setProducts([
+          {
+            id: 'prod-1',
+            name: 'Premium Wireless Headphones',
+            sku: 'WH-PRO-001',
+            price: 299.99,
+            category: 'Premium Products',
+            demand: 'high',
+            seasonality: 'Holiday',
+            margin: 35.5,
+            trend: 'up',
+            imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=500&auto=format&fit=crop'
+          },
+          {
+            id: 'prod-2',
+            name: 'Summer Beach Sandals',
+            sku: 'SBS-001',
+            price: 49.99,
+            category: 'Seasonal',
+            demand: 'medium',
+            seasonality: 'Summer',
+            margin: 22.8,
+            trend: 'up',
+            imageUrl: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=500&auto=format&fit=crop'
+          },
+          {
+            id: 'prod-3',
+            name: 'Smartphone Holder',
+            sku: 'SH-001',
+            price: 19.99,
+            category: 'High Demand',
+            demand: 'high',
+            margin: 45.2,
+            trend: 'stable',
+            imageUrl: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=500&auto=format&fit=crop'
+          },
+          {
+            id: 'prod-4',
+            name: 'Winter Thermal Jacket',
+            sku: 'WTJ-001',
+            price: 189.99,
+            category: 'Seasonal',
+            demand: 'medium',
+            seasonality: 'Winter',
+            margin: 28.7,
+            trend: 'down',
+            imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=500&auto=format&fit=crop'
+          },
+          {
+            id: 'prod-5',
+            name: 'Smart Watch Pro',
+            sku: 'SWP-001',
+            price: 349.99,
+            category: 'Premium Products',
+            demand: 'high',
+            margin: 38.2,
+            trend: 'up',
+            imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=500&auto=format&fit=crop'
+          },
+          {
+            id: 'prod-6',
+            name: 'Mini Portable Speaker',
+            sku: 'MPS-001',
+            price: 79.99,
+            category: 'High Demand',
+            demand: 'high',
+            margin: 32.5,
+            trend: 'up',
+            imageUrl: 'https://images.unsplash.com/photo-1564424224827-cd24b8915874?q=80&w=500&auto=format&fit=crop'
+          }
+        ]);
+      }
+    };
+
+    fetchProducts();
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (user) {
+      const channel = supabase
+        .channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'products'
+          },
+          (payload) => {
+            console.log('New product added:', payload);
+            setProducts(prevProducts => [payload.new as any, ...prevProducts]);
+            
+            toast({
+              title: 'New Product Added',
+              description: `${payload.new.name} has been added to your products.`,
+              duration: 3000,
+            });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'products'
+          },
+          (payload) => {
+            console.log('Product updated:', payload);
+            setProducts(prevProducts => 
+              prevProducts.map(product => 
+                product.id === payload.new.id ? { ...payload.new, imageUrl: payload.new.image_url } : product
+              )
+            );
+            
+            toast({
+              title: 'Product Updated',
+              description: `${payload.new.name} has been updated.`,
+              duration: 3000,
+            });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'products'
+          },
+          (payload) => {
+            console.log('Product deleted:', payload);
+            setProducts(prevProducts => 
+              prevProducts.filter(product => product.id !== payload.old.id)
+            );
+            
+            toast({
+              title: 'Product Deleted',
+              description: `A product has been removed.`,
+              duration: 3000,
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, toast]);
   
-  // Handle category creation
   const handleCreateCategory = (categoryData: Omit<Category, 'id'>) => {
     const newCategory = {
       id: `cat-${categories.length + 1}`,
@@ -200,7 +299,6 @@ const Index = () => {
     });
   };
   
-  // Handle product categorization
   const handleCategorizeProduct = (product: Product) => {
     setSelectedProduct(product);
     setCategorizeProductDialogOpen(true);
@@ -226,7 +324,6 @@ const Index = () => {
     }
   };
   
-  // Handle pricing rule creation
   const handleCreatePricingRule = (rule: Omit<PricingRule, 'id'>) => {
     const newRule = {
       id: `pr-${pricingRules.length + 1}`,
@@ -242,7 +339,6 @@ const Index = () => {
     });
   };
   
-  // Handle pricing rule deletion
   const handleDeletePricingRule = (ruleId: string) => {
     setPricingRules(pricingRules.filter(rule => rule.id !== ruleId));
     
@@ -253,7 +349,6 @@ const Index = () => {
     });
   };
   
-  // Handle pricing rule updates
   const handleUpdatePricingRule = (updatedRule: PricingRule) => {
     setPricingRules(pricingRules.map(rule => 
       rule.id === updatedRule.id ? updatedRule : rule
@@ -264,6 +359,45 @@ const Index = () => {
       description: `${updatedRule.name} has been updated successfully`,
       duration: 3000,
     });
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please log in to delete products',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) {
+        console.error('Error deleting product:', error);
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to delete product',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Product deleted successfully',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -314,10 +448,23 @@ const Index = () => {
                       <span className="sr-only">List view</span>
                     </Button>
                   </div>
-                  <Button>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Product
-                  </Button>
+                  <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Product
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[700px]">
+                      <DialogHeader>
+                        <DialogTitle>Add New Product</DialogTitle>
+                        <DialogDescription>
+                          Create a new product with details and pricing information
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ProductForm onSuccess={() => setIsAddProductOpen(false)} />
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
               
@@ -332,11 +479,11 @@ const Index = () => {
                     product={product} 
                     onEdit={setEditingProduct}
                     onCategorize={handleCategorizeProduct}
+                    onDelete={handleDeleteProduct}
                   />
                 ))}
               </div>
               
-              {/* Categorize Product Dialog */}
               <Dialog 
                 open={categorizeProductDialogOpen} 
                 onOpenChange={setCategorizeProductDialogOpen}

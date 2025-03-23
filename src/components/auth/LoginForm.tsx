@@ -10,6 +10,8 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Create schema for login form validation
 const loginSchema = z.object({
@@ -22,8 +24,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Initialize form with react-hook-form
   const form = useForm<LoginFormValues>({
@@ -36,29 +40,35 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    setAuthError(null);
     
     try {
-      // Here we would normally connect to a backend/API
-      // Since we don't have a backend connected yet, we'll simulate success
-      console.log("Login form submitted:", data);
+      const { error } = await signIn(data.email, data.password);
       
-      // For demonstration purposes only (remove in production)
-      setTimeout(() => {
+      if (error) {
+        console.error("Login error:", error);
+        setAuthError(error.message || "Invalid email or password. Please try again.");
+        toast({
+          title: "Login failed",
+          description: "Please check your credentials and try again.",
+          variant: "destructive",
+        });
+      } else {
         toast({
           title: "Login successful",
           description: "Welcome back!",
         });
         navigate("/dashboard");
-        setIsLoading(false);
-      }, 1500);
-      
+      }
     } catch (error) {
       console.error("Login error:", error);
+      setAuthError("An unexpected error occurred. Please try again.");
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -72,6 +82,11 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {authError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
