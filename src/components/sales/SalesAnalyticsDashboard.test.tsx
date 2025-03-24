@@ -10,9 +10,18 @@ vi.mock('recharts', () => {
   return {
     ...OriginalModule,
     ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    LineChart: () => <div data-testid="line-chart" />,
-    BarChart: () => <div data-testid="bar-chart" />,
-    PieChart: () => <div data-testid="pie-chart" />,
+    LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
+    BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
+    PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
+    Line: () => <div data-testid="line" />,
+    Bar: () => <div data-testid="bar" />,
+    Pie: () => <div data-testid="pie" />,
+    XAxis: () => <div data-testid="x-axis" />,
+    YAxis: () => <div data-testid="y-axis" />,
+    CartesianGrid: () => <div data-testid="cartesian-grid" />,
+    Tooltip: () => <div data-testid="tooltip" />,
+    Legend: () => <div data-testid="legend" />,
+    Cell: () => <div data-testid="cell" />
   };
 });
 
