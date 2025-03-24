@@ -11,16 +11,17 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface SalesDataItem {
+// Define a consistent interface for sales data
+export interface SalesDataItem {
   id: string;
   product: string;
-  category?: string;
-  quantity?: number;
-  unit_price?: number;
-  total_sales?: number;
-  region?: string;
-  date?: string;
-  customer_type?: string;
+  category: string;
+  quantity: number;
+  unit_price: number;
+  total_sales: number;
+  region: string;
+  date: string;
+  customer_type: string;
   [key: string]: any;
 }
 
@@ -51,13 +52,45 @@ const SalesAnalysis = () => {
         } else {
           // Fallback to local data if no data in Supabase
           const localData = await import('@/data/product_sales_data.json');
-          setSalesData(localData.default);
+          
+          // Transform local data to match the SalesDataItem interface
+          const transformedData: SalesDataItem[] = localData.default.map((item: any) => ({
+            id: item.id,
+            product: item.productName,
+            category: item.category || '',
+            quantity: item.quantity || 0,
+            unit_price: item.price || 0,
+            total_sales: (item.price || 0) * (item.quantity || 0),
+            region: item.salesLocation || '',
+            date: `2023-${item.month === 'April' ? '04' : item.month === 'February' ? '02' : item.month === 'August' ? '08' : item.month === 'June' ? '06' : item.month === 'December' ? '12' : '01'}-01`,
+            customer_type: 'Regular',
+            // Preserve original fields for backward compatibility
+            ...item
+          }));
+          
+          setSalesData(transformedData);
         }
       } catch (error) {
         console.error('Falling back to local data:', error);
         // Fallback to local data
         const localData = await import('@/data/product_sales_data.json');
-        setSalesData(localData.default);
+        
+        // Transform local data to match the SalesDataItem interface
+        const transformedData: SalesDataItem[] = localData.default.map((item: any) => ({
+          id: item.id,
+          product: item.productName,
+          category: item.category || '',
+          quantity: item.quantity || 0,
+          unit_price: item.price || 0,
+          total_sales: (item.price || 0) * (item.quantity || 0),
+          region: item.salesLocation || '',
+          date: `2023-${item.month === 'April' ? '04' : item.month === 'February' ? '02' : item.month === 'August' ? '08' : item.month === 'June' ? '06' : item.month === 'December' ? '12' : '01'}-01`,
+          customer_type: 'Regular',
+          // Preserve original fields for backward compatibility
+          ...item
+        }));
+        
+        setSalesData(transformedData);
         
         toast({
           title: "Using local data",
