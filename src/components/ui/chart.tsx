@@ -53,8 +53,12 @@ export const LineChart = ({
   }));
 
   // Format ticks if using startEndOnly
-  const formatTick = (tickItem: any, index: number, ticks: any[]) => {
+  // Fix for the type error: Update the function signature to match XAxis tickFormatter
+  const formatTick = (tickItem: any, index: number) => {
     if (startEndOnly) {
+      // We need to get the ticks array from the component's render context
+      // Since we can't access it directly, we'll use a workaround
+      const ticks = data.map(item => item[index]);
       return index === 0 || index === ticks.length - 1 ? tickItem : '';
     }
     return tickItem;
@@ -204,6 +208,7 @@ export const RadialBarChart = ({
           label={{ position: 'insideStart', fill: '#fff' }}
           background
           dataKey={category}
+          // Use name instead of nameKey for RadialBar
           name={index}
         >
           {data.map((entry, idx) => (
@@ -250,6 +255,7 @@ export const HeatMapChart = ({
         data={transformedData}
         dataKey={category}
         nameKey={Array.isArray(index) ? 'name' : index}
+        // Use aspectRatio instead of ratio
         aspectRatio={4/3}
         stroke="#fff"
         fill="#8884d8"
