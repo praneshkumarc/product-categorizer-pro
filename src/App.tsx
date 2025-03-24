@@ -20,7 +20,7 @@ function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
+      const { data: { session }, error } = await supabase.auth.getSession();
 
       if (session) {
         setIsAuthenticated(true);

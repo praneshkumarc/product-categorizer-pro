@@ -19,35 +19,65 @@ import {
   Treemap,
 } from 'recharts';
 
+// Define common props
+type CommonChartProps = {
+  data: any[];
+  height?: number;
+  className?: string;
+  valueFormatter?: (value: any) => string;
+};
+
 // LineChart component
 export const LineChart = ({ 
   data, 
-  height = 300, 
-  xKey = 'name', 
-  series,
-  grid = true
-}: { 
-  data: any[]; 
-  height?: number;
-  xKey?: string;
-  series: {name: string; key: string; color: string}[];
-  grid?: boolean;
+  height = 300,
+  categories,
+  index,
+  valueFormatter,
+  showLegend = true,
+  showGridLines = true,
+  startEndOnly = false,
+  className = ""
+}: CommonChartProps & { 
+  categories: string[];
+  index: string;
+  showLegend?: boolean;
+  showGridLines?: boolean;
+  startEndOnly?: boolean;
 }) => {
+  // Create series from categories
+  const series = categories.map((category, i) => ({
+    name: category,
+    key: category,
+    color: getColorForIndex(i)
+  }));
+
+  // Format ticks if using startEndOnly
+  const formatTick = (tickItem: any, index: number, ticks: any[]) => {
+    if (startEndOnly) {
+      return index === 0 || index === ticks.length - 1 ? tickItem : '';
+    }
+    return tickItem;
+  };
+
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} className={className}>
       <RechartsLineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        {grid && <CartesianGrid strokeDasharray="3 3" />}
-        <XAxis dataKey={xKey} />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        {series.map((s, index) => (
+        {showGridLines && <CartesianGrid strokeDasharray="3 3" />}
+        <XAxis 
+          dataKey={index} 
+          tickFormatter={startEndOnly ? formatTick : undefined}
+        />
+        <YAxis tickFormatter={valueFormatter} />
+        <Tooltip formatter={valueFormatter} />
+        {showLegend && <Legend />}
+        {categories.map((category, idx) => (
           <Line 
-            key={index} 
+            key={idx} 
             type="monotone" 
-            dataKey={s.key} 
-            name={s.name} 
-            stroke={s.color} 
+            dataKey={category} 
+            name={category} 
+            stroke={getColorForIndex(idx)} 
             activeDot={{ r: 8 }} 
           />
         ))}
@@ -59,31 +89,48 @@ export const LineChart = ({
 // BarChart component
 export const BarChart = ({ 
   data, 
-  height = 300, 
-  xKey = 'name', 
-  series,
-  layout = 'vertical'
-}: { 
-  data: any[]; 
-  height?: number;
-  xKey?: string;
-  series: {name: string; key: string; color: string}[];
+  height = 300,
+  categories,
+  index,
+  valueFormatter,
+  showLegend = true,
+  showGridLines = true,
+  layout = 'horizontal',
+  className = ""
+}: CommonChartProps & { 
+  categories: string[];
+  index: string;
+  showLegend?: boolean;
+  showGridLines?: boolean;
   layout?: 'vertical' | 'horizontal';
 }) => {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} className={className}>
       <RechartsBarChart
         data={data}
         layout={layout}
         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey={layout === 'horizontal' ? xKey : undefined} type={layout === 'horizontal' ? 'category' : 'number'} />
-        <YAxis dataKey={layout === 'vertical' ? xKey : undefined} type={layout === 'vertical' ? 'category' : 'number'} />
-        <Tooltip />
-        <Legend />
-        {series.map((s, index) => (
-          <Bar key={index} dataKey={s.key} name={s.name} fill={s.color} />
+        {showGridLines && <CartesianGrid strokeDasharray="3 3" />}
+        <XAxis 
+          dataKey={layout === 'horizontal' ? index : undefined} 
+          type={layout === 'horizontal' ? 'category' : 'number'} 
+          tickFormatter={layout === 'horizontal' ? undefined : valueFormatter}
+        />
+        <YAxis 
+          dataKey={layout === 'vertical' ? index : undefined} 
+          type={layout === 'vertical' ? 'category' : 'number'}
+          tickFormatter={layout === 'vertical' ? undefined : valueFormatter}
+        />
+        <Tooltip formatter={valueFormatter} />
+        {showLegend && <Legend />}
+        {categories.map((category, idx) => (
+          <Bar 
+            key={idx} 
+            dataKey={category} 
+            name={category} 
+            fill={getColorForIndex(idx)} 
+          />
         ))}
       </RechartsBarChart>
     </ResponsiveContainer>
@@ -93,19 +140,19 @@ export const BarChart = ({
 // PieChart component
 export const PieChart = ({ 
   data, 
-  height = 300, 
-  nameKey = 'name',
-  dataKey = 'value',
+  height = 300,
+  category,
+  index,
+  valueFormatter,
+  className = "",
   colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A4DE6C']
-}: { 
-  data: any[]; 
-  height?: number;
-  nameKey?: string;
-  dataKey?: string;
+}: CommonChartProps & { 
+  category: string;
+  index: string;
   colors?: string[];
 }) => {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} className={className}>
       <RechartsPieChart>
         <Pie
           data={data}
@@ -115,14 +162,14 @@ export const PieChart = ({
           label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
           outerRadius={80}
           fill="#8884d8"
-          dataKey={dataKey}
-          nameKey={nameKey}
+          dataKey={category}
+          nameKey={index}
         >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+          {data.map((entry, idx) => (
+            <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
           ))}
         </Pie>
-        <Tooltip />
+        <Tooltip formatter={valueFormatter} />
         <Legend />
       </RechartsPieChart>
     </ResponsiveContainer>
@@ -133,18 +180,18 @@ export const PieChart = ({
 export const RadialBarChart = ({ 
   data, 
   height = 300,
-  nameKey = 'name',
-  dataKey = 'value', 
+  category,
+  index,
+  valueFormatter,
+  className = "",
   colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
-}: { 
-  data: any[]; 
-  height?: number;
-  nameKey?: string;
-  dataKey?: string;
+}: CommonChartProps & { 
+  category: string;
+  index: string;
   colors?: string[];
 }) => {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} className={className}>
       <RechartsRadialBarChart 
         cx="50%" 
         cy="50%" 
@@ -156,15 +203,15 @@ export const RadialBarChart = ({
         <RadialBar
           label={{ position: 'insideStart', fill: '#fff' }}
           background
-          dataKey={dataKey}
-          nameKey={nameKey}
+          dataKey={category}
+          name={index}
         >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+          {data.map((entry, idx) => (
+            <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
           ))}
         </RadialBar>
         <Legend iconSize={10} layout="vertical" verticalAlign="middle" wrapperStyle={{ lineHeight: '24px' }} />
-        <Tooltip />
+        <Tooltip formatter={valueFormatter} />
       </RechartsRadialBarChart>
     </ResponsiveContainer>
   );
@@ -174,30 +221,52 @@ export const RadialBarChart = ({
 export const HeatMapChart = ({ 
   data, 
   height = 300,
-  nameKey = 'name',
-  dataKey = 'value',
+  category,
+  index,
+  valueFormatter,
+  className = "",
   colors = ['#8889DD', '#9597E4', '#8DC77B', '#A5D297', '#E2CF45', '#F8C12D']
-}: { 
-  data: any[]; 
-  height?: number;
-  nameKey?: string;
-  dataKey?: string;
+}: CommonChartProps & { 
+  category: string;
+  index: string | string[];
   colors?: string[];
 }) => {
+  // For index as array, we need to transform the data to use properly with Treemap
+  const transformedData = React.useMemo(() => {
+    if (Array.isArray(index)) {
+      // Create a unique identifier for each data point using the index fields
+      return data.map(item => ({
+        ...item,
+        id: index.map(key => item[key]).join('-'),
+        name: index.map(key => item[key]).join(', ')
+      }));
+    }
+    return data;
+  }, [data, index]);
+
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} className={className}>
       <Treemap
-        data={data}
-        dataKey={dataKey}
-        nameKey={nameKey}
-        ratio={4/3}
+        data={transformedData}
+        dataKey={category}
+        nameKey={Array.isArray(index) ? 'name' : index}
+        aspectRatio={4/3}
         stroke="#fff"
         fill="#8884d8"
       >
-        {data.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+        {transformedData.map((entry, idx) => (
+          <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
         ))}
       </Treemap>
     </ResponsiveContainer>
   );
 };
+
+// Helper function to get chart colors
+function getColorForIndex(index: number): string {
+  const colors = [
+    '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A4DE6C', 
+    '#8884d8', '#83a6ed', '#8dd1e1', '#82ca9d', '#ffc658'
+  ];
+  return colors[index % colors.length];
+}

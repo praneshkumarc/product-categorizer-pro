@@ -8,7 +8,10 @@ export type AuthContextType = {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>; // Add the logout method to the type
+  logout: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: any }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ success: boolean; error?: any }>;
+  signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 };
 
@@ -17,7 +20,10 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   login: async () => ({ success: false }),
   register: async () => ({ success: false }),
-  logout: async () => {}, // Add the logout method implementation
+  logout: async () => {},
+  signIn: async () => ({ success: false }),
+  signUp: async () => ({ success: false }),
+  signOut: async () => {},
   forgotPassword: async () => ({ success: false }),
 });
 
@@ -83,6 +89,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Add these aliases to match the names used in components
+  const signIn = login;
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: metadata
+        } 
+      });
+      if (error) throw error;
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+  const signOut = logout;
+
   const forgotPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
@@ -94,7 +119,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout, forgotPassword }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      login, 
+      register, 
+      logout, 
+      signIn, 
+      signUp, 
+      signOut, 
+      forgotPassword 
+    }}>
       {children}
     </AuthContext.Provider>
   );
