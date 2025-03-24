@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Index from './pages/Index';
@@ -8,8 +9,8 @@ import NotFound from './pages/NotFound';
 import Dashboard from './pages/Dashboard';
 import SalesAnalysis from './pages/SalesAnalysis';
 import './App.css';
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "./components/theme-provider";
+import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from './contexts/AuthContext';
 import { supabase } from './integrations/supabase/client';
 
@@ -41,9 +42,9 @@ function App() {
   }
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="app-theme">
+    <Router>
       <AuthProvider>
-        <Router>
+        <ThemeProvider defaultTheme="light" storageKey="app-theme">
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -53,10 +54,10 @@ function App() {
             <Route path="/sales-analysis" element={<SalesAnalysis />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
-        <Toaster />
+          <Toaster />
+        </ThemeProvider>
       </AuthProvider>
-    </ThemeProvider>
+    </Router>
   );
 }
 
