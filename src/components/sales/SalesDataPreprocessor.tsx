@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, AlertCircle, Check, FileWarning, Database } from "lucide-react";
+import { Info, AlertCircle, Check, FileWarning, Database, Upload, File } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface SalesDataItem {
@@ -24,14 +23,20 @@ interface SalesDataItem {
 
 interface SalesDataPreprocessorProps {
   salesData: SalesDataItem[];
+  onDataChange?: (newData: SalesDataItem[]) => void;
 }
 
-export const SalesDataPreprocessor: React.FC<SalesDataPreprocessorProps> = ({ salesData }) => {
+export const SalesDataPreprocessor: React.FC<SalesDataPreprocessorProps> = ({ 
+  salesData, 
+  onDataChange 
+}) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [cleanedData, setCleanedData] = useState<SalesDataItem[]>([]);
   const [showCleanedData, setShowCleanedData] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
   // Normalize the data format coming from different sources
   const normalizedData = useMemo(() => {
@@ -82,6 +87,75 @@ export const SalesDataPreprocessor: React.FC<SalesDataPreprocessorProps> = ({ sa
       dataQualityScore: Math.round(100 * (1 - (missingValues + anomalies) / (totalRecords * 6))),
     };
   }, [normalizedData]);
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    setUploadedFileName(file.name);
+    
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      try {
+        const result = e.target?.result;
+        if (typeof result !== 'string') {
+          throw new Error('Invalid file format');
+        }
+        
+        const parsedData = JSON.parse(result);
+        
+        // Validate the data structure
+        if (!Array.isArray(parsedData)) {
+          throw new Error('Uploaded file must contain an array of sales data');
+        }
+        
+        // Generate IDs if they don't exist
+        const processedData = parsedData.map((item, index) => ({
+          id: item.id || `upload-${index}`,
+          ...item
+        }));
+        
+        // Notify parent component about the new data
+        if (onDataChange) {
+          onDataChange(processedData);
+        }
+        
+        toast({
+          title: "File uploaded successfully",
+          description: `${processedData.length} records loaded from ${file.name}`,
+          duration: 3000,
+        });
+        
+        // Set cleaned data to empty since we have new data
+        setCleanedData([]);
+        setShowCleanedData(false);
+      } catch (error) {
+        toast({
+          title: "Error uploading file",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          variant: "destructive",
+          duration: 5000,
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: "Error reading file",
+        description: "There was an error reading the uploaded file",
+        variant: "destructive",
+        duration: 5000,
+      });
+      setIsUploading(false);
+    };
+    
+    reader.readAsText(file);
+  };
 
   // Function to clean and preprocess the data
   const cleanAndPreprocessData = async () => {
@@ -161,6 +235,11 @@ export const SalesDataPreprocessor: React.FC<SalesDataPreprocessorProps> = ({ sa
     setCleanedData(fullyCleaned);
     setIsProcessing(false);
     setShowCleanedData(true);
+    
+    // Update parent component with cleaned data
+    if (onDataChange) {
+      onDataChange(fullyCleaned);
+    }
     
     toast({
       title: "Data preprocessing complete",
@@ -270,6 +349,36 @@ export const SalesDataPreprocessor: React.FC<SalesDataPreprocessorProps> = ({ sa
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="border border-dashed border-gray-300 rounded-md p-6 text-center">
+                <input
+                  type="file"
+                  id="fileUpload"
+                  className="hidden"
+                  accept=".json"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                />
+                <label
+                  htmlFor="fileUpload"
+                  className="flex flex-col items-center justify-center cursor-pointer"
+                >
+                  <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium mb-1">
+                    {isUploading ? 'Uploading...' : 'Upload JSON data file'}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Drag and drop or click to browse
+                  </span>
+                </label>
+                
+                {uploadedFileName && (
+                  <div className="mt-3 flex items-center justify-center text-sm">
+                    <File className="h-4 w-4 mr-1 text-blue-500" />
+                    <span>{uploadedFileName}</span>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <div className="font-medium">Preprocessing Steps:</div>
                 <div className="flex items-center space-x-2 text-sm">

@@ -11,10 +11,23 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface SalesDataItem {
+  id: string;
+  product: string;
+  category?: string;
+  quantity?: number;
+  unit_price?: number;
+  total_sales?: number;
+  region?: string;
+  date?: string;
+  customer_type?: string;
+  [key: string]: any;
+}
+
 const SalesAnalysis = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [salesData, setSalesData] = useState<any[]>([]);
+  const [salesData, setSalesData] = useState<SalesDataItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -59,6 +72,16 @@ const SalesAnalysis = () => {
     fetchSalesData();
   }, [toast]);
 
+  // Handle data updates from the SalesDataPreprocessor
+  const handleDataChange = (newData: SalesDataItem[]) => {
+    setSalesData(newData);
+    toast({
+      title: "Data updated",
+      description: `Dataset updated with ${newData.length} records.`,
+      variant: "default",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background transition-page">
       <Header />
@@ -100,7 +123,7 @@ const SalesAnalysis = () => {
                     <p>Loading sales data...</p>
                   </div>
                 ) : (
-                  <SalesDataPreprocessor salesData={salesData} />
+                  <SalesDataPreprocessor salesData={salesData} onDataChange={handleDataChange} />
                 )}
               </Card>
             </TabsContent>
