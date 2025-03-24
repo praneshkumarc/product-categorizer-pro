@@ -25,10 +25,12 @@ import { PlusCircle, Layers, LayoutGrid } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [categories, setCategories] = useState<Category[]>([
     {
@@ -224,7 +226,7 @@ const Index = () => {
           },
           (payload) => {
             console.log('New product added:', payload);
-            setProducts(prevProducts => [payload.new as any, ...prevProducts]);
+            setProducts(prevProducts => [payload.new as Product, ...prevProducts]);
             
             toast({
               title: 'New Product Added',
@@ -244,7 +246,9 @@ const Index = () => {
             console.log('Product updated:', payload);
             setProducts(prevProducts => 
               prevProducts.map(product => 
-                product.id === payload.new.id ? { ...payload.new, imageUrl: payload.new.image_url } : product
+                product.id === payload.new.id ? 
+                  { ...payload.new, imageUrl: payload.new.image_url } as Product : 
+                  product
               )
             );
             
@@ -526,12 +530,13 @@ const Index = () => {
                 <h1 className="text-2xl font-medium">Categories</h1>
                 <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="transition-all duration-300">
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      Add Category
+                      {!isMobile && "Add Category"}
+                      {isMobile && "Add"}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[700px]">
+                  <DialogContent className={isMobile ? "w-[95%] max-w-[95%] sm:max-w-[700px]" : "sm:max-w-[700px]"}>
                     <DialogHeader>
                       <DialogTitle>Create New Category</DialogTitle>
                       <DialogDescription>
