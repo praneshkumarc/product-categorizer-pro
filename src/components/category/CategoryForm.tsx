@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Tag, PlusCircle, X, Save } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface Category {
   id: string;
@@ -38,6 +39,7 @@ interface CategoryFormProps {
 }
 
 export const CategoryForm = ({ onSubmit, initialCategory }: CategoryFormProps) => {
+  const isMobile = useIsMobile();
   const [name, setName] = useState(initialCategory?.name || '');
   const [description, setDescription] = useState(initialCategory?.description || '');
   const [attributes, setAttributes] = useState<string[]>(initialCategory?.attributes || []);
@@ -118,7 +120,7 @@ export const CategoryForm = ({ onSubmit, initialCategory }: CategoryFormProps) =
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className={`grid ${!isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
           <div className="space-y-2">
             <Label htmlFor="name">Category Name</Label>
             <Input
@@ -176,7 +178,7 @@ export const CategoryForm = ({ onSubmit, initialCategory }: CategoryFormProps) =
             <Input
               value={attributeInput}
               onChange={(e) => setAttributeInput(e.target.value)}
-              placeholder="Add attribute (e.g., margin, demand)"
+              placeholder={isMobile ? "Add attribute" : "Add attribute (e.g., margin, demand)"}
               className="transition-all focus-visible:ring-primary"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -235,7 +237,7 @@ export const CategoryForm = ({ onSubmit, initialCategory }: CategoryFormProps) =
             className="text-xs"
           >
             <PlusCircle className="h-3 w-3 mr-1" />
-            Add Rule
+            {isMobile ? "Add" : "Add Rule"}
           </Button>
         </div>
         
@@ -246,71 +248,90 @@ export const CategoryForm = ({ onSubmit, initialCategory }: CategoryFormProps) =
         ) : (
           <div className="space-y-3">
             {rules.map((rule, index) => (
-              <div key={index} className="flex items-center gap-2 p-3 bg-muted/40 rounded-md animate-fade-in">
-                <Select
-                  value={rule.attribute}
-                  onValueChange={(value) => handleRuleChange(index, 'attribute', value)}
-                >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Attribute" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {attributes.map((attr) => (
-                      <SelectItem key={attr} value={attr}>
-                        {attr}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div key={index} className={`flex ${isMobile ? 'flex-col' : 'items-center'} gap-2 p-3 bg-muted/40 rounded-md animate-fade-in`}>
+                {isMobile && (
+                  <div className="flex justify-between items-center w-full mb-2">
+                    <span className="text-sm font-medium">Rule {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveRule(index)}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
                 
-                <Select
-                  value={rule.operator}
-                  onValueChange={(value) => handleRuleChange(
-                    index, 
-                    'operator', 
-                    value as Rule['operator']
-                  )}
-                >
-                  <SelectTrigger className="w-[130px]">
-                    <SelectValue placeholder="Operator" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="equals">equals</SelectItem>
-                    <SelectItem value="contains">contains</SelectItem>
-                    <SelectItem value="greater_than">greater than</SelectItem>
-                    <SelectItem value="less_than">less than</SelectItem>
-                    <SelectItem value="between">between</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Input
-                  value={
-                    typeof rule.value === 'object' 
-                      ? `${rule.value[0]}-${rule.value[1]}` 
-                      : rule.value
-                  }
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (rule.operator === 'between') {
-                      const [min, max] = value.split('-').map(Number);
-                      handleRuleChange(index, 'value', [min || 0, max || 0]);
-                    } else {
-                      handleRuleChange(index, 'value', value);
+                <div className={isMobile ? "grid grid-cols-1 gap-2 w-full" : "flex items-center gap-2 flex-1"}>
+                  <Select
+                    value={rule.attribute}
+                    onValueChange={(value) => handleRuleChange(index, 'attribute', value)}
+                  >
+                    <SelectTrigger className={isMobile ? "w-full" : "w-[120px]"}>
+                      <SelectValue placeholder="Attribute" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {attributes.map((attr) => (
+                        <SelectItem key={attr} value={attr}>
+                          {attr}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select
+                    value={rule.operator}
+                    onValueChange={(value) => handleRuleChange(
+                      index, 
+                      'operator', 
+                      value as Rule['operator']
+                    )}
+                  >
+                    <SelectTrigger className={isMobile ? "w-full" : "w-[130px]"}>
+                      <SelectValue placeholder="Operator" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="equals">equals</SelectItem>
+                      <SelectItem value="contains">contains</SelectItem>
+                      <SelectItem value="greater_than">greater than</SelectItem>
+                      <SelectItem value="less_than">less than</SelectItem>
+                      <SelectItem value="between">between</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Input
+                    value={
+                      typeof rule.value === 'object' 
+                        ? `${rule.value[0]}-${rule.value[1]}` 
+                        : rule.value
                     }
-                  }}
-                  placeholder={rule.operator === 'between' ? 'min-max' : 'value'}
-                  className="flex-1"
-                />
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (rule.operator === 'between') {
+                        const [min, max] = value.split('-').map(Number);
+                        handleRuleChange(index, 'value', [min || 0, max || 0]);
+                      } else {
+                        handleRuleChange(index, 'value', value);
+                      }
+                    }}
+                    placeholder={rule.operator === 'between' ? 'min-max' : 'value'}
+                    className="flex-1"
+                  />
+                </div>
                 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveRule(index)}
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {!isMobile && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveRule(index)}
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
