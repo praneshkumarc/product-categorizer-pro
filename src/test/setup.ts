@@ -1,16 +1,17 @@
 
 import '@testing-library/jest-dom';
 
-// Mock matchMedia
-window.matchMedia = window.matchMedia || function() {
-  return {
+// Mock matchMedia with proper TypeScript types
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
-    addListener: function() {},
-    removeListener: function() {},
-    addEventListener: function() {},
-    removeEventListener: function() {},
-    dispatchEvent: function() {
-      return true;
-    },
-  };
-};
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  })),
+});
