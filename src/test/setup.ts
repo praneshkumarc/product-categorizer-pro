@@ -1,5 +1,6 @@
 
 import '@testing-library/jest-dom';
+import { expect, afterEach, vi } from 'vitest';
 
 // Mock matchMedia with proper TypeScript types
 Object.defineProperty(window, 'matchMedia', {
