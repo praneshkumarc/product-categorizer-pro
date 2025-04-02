@@ -6,21 +6,21 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 // Install the project dependencies
-                sh 'npm ci'
+                bat 'npm ci'
             }
         }
         
         stage('Lint') {
             steps {
                 // Run linting to ensure code quality
-                sh 'npm run lint || true' // The '|| true' ensures pipeline continues even if linting fails
+                bat 'npm run lint || exit 0' // Ensures pipeline continues even if linting fails
             }
         }
         
         stage('Test') {
             steps {
                 // Run the Vitest tests
-                sh 'npm run test'
+                bat 'npm run test'
             }
         }
     }
