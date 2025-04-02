@@ -1,5 +1,5 @@
 pipeline {
-    agent {
+    agent [any] {
         // This specifies where the pipeline will execute
         docker {
             image 'node:18' // Using Node.js 18 for compatibility with your project
