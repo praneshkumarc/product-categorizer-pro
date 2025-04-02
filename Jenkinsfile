@@ -2,12 +2,6 @@ pipeline {
     agent any
     
     stages {
-        stage('Checkout') {
-            steps {
-                // Get the code from the repository
-                checkout scm
-            }
-        }
         
         stage('Install Dependencies') {
             steps {
